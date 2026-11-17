@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Schocken – Strichliste</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1f5c45">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script src="config.js"></script>
+<script src="chart.umd.js"></script>
+<style>
+:root{
+  --bg:#f4f1ea; --card:#fffdf8; --ink:#1d2320; --muted:#6b726d; --line:#e2ddd2;
+  --felt:#1f5c45; --felt2:#174a37; --accent:#c8402f; --accent2:#e9a23b; --ok:#2f7d55;
+  --chip:#efeadf; --shadow:0 1px 2px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Inter,system-ui,sans-serif}
+button{font:inherit;cursor:pointer}
+header{background:var(--felt);color:#fff;padding:calc(14px + env(safe-area-inset-top)) 20px 14px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;position:sticky;top:0;z-index:5}
+header h1{font-size:19px;margin:0;font-weight:700;letter-spacing:.2px;display:flex;align-items:center;gap:8px}
+.die{display:inline-grid;grid-template-columns:repeat(3,4px);grid-template-rows:repeat(3,4px);gap:2px;background:#fff;border-radius:5px;padding:3px}
+.die i{width:4px;height:4px;border-radius:50%}
+.die i.on{background:var(--felt)}
+.listsel{display:flex;gap:6px;align-items:center;margin-left:8px}
+.listsel select{background:var(--felt2);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:6px 10px;font:inherit}
+.hbtn{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:6px 10px}
+.hbtn:hover{background:rgba(255,255,255,.22)}
+.sync{margin-left:auto;font-size:13px;display:flex;align-items:center;gap:6px;opacity:.95}
+.dot{width:9px;height:9px;border-radius:50%;background:#aaa}
+.dot.ok{background:#62d68f}.dot.busy{background:var(--accent2)}.dot.err{background:#ff7a6a}
+nav{display:flex;gap:4px;padding:10px 20px 0;max-width:1200px;margin:0 auto;flex-wrap:wrap}
+nav button{background:none;border:none;padding:9px 14px;border-radius:9px 9px 0 0;color:var(--muted);font-weight:600;border-bottom:3px solid transparent}
+nav button.active{color:var(--felt);border-bottom-color:var(--felt)}
+main{max-width:1200px;margin:0 auto;padding:16px 20px 60px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow);margin-bottom:16px}
+.card h2{margin:0 0 12px;font-size:16px}
+.muted{color:var(--muted)}.small{font-size:13px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1.5px solid var(--line);background:var(--chip);border-radius:999px;padding:8px 14px;font-weight:600;color:var(--muted);user-select:none}
+.chip.on{background:var(--felt);border-color:var(--felt);color:#fff}
+.chip.loser{background:var(--accent);border-color:var(--accent);color:#fff}
+.chip:disabled{opacity:.35;cursor:not-allowed}
+.seg{display:inline-flex;border:1.5px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:none;background:var(--chip);padding:10px 16px;font-weight:600;color:var(--muted)}
+.seg button.on{background:var(--ink);color:#fff}
+.btn{border:none;border-radius:10px;padding:10px 16px;font-weight:600;background:var(--felt);color:#fff}
+.btn:hover{background:var(--felt2)}
+.btn.sec{background:var(--chip);color:var(--ink);border:1px solid var(--line)}
+.btn.danger{background:var(--accent)}
+.btn.sm{padding:6px 10px;font-size:13px;border-radius:8px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+input[type=text],input[type=date],select.inp{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+table{width:100%;border-collapse:collapse}
+th,td{padding:9px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:600;cursor:pointer;user-select:none}
+th.sorted{color:var(--felt)}
+tbody tr:hover{background:#f7f3ea}
+.tablewrap{overflow-x:auto}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--accent);color:#fff;margin-left:6px;vertical-align:1px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow)}
+.kpi .v{font-size:24px;font-weight:700}
+.kpi .l{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px}
+.chartbox{position:relative;height:300px}
+.cell0{color:#b5b0a5}.cell1{color:var(--accent);font-weight:700}.cell2{color:#fff;background:var(--accent);font-weight:700;border-radius:6px;padding:1px 7px}
+.na{color:#d8d3c8}
+dialog{border:none;border-radius:16px;padding:0;max-width:560px;width:calc(100% - 30px);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+dialog::backdrop{background:rgba(20,30,25,.45)}
+.dlg{padding:20px}
+.dlg h3{margin:0 0 10px}
+.dlg .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:.25s;pointer-events:none;z-index:50}
+.toast.show{opacity:1}
+.plist{display:grid;gap:8px}
+.pitem{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.pitem .name{font-weight:600;flex:1}
+.hint{background:#fff6e3;border:1px solid #f0d9a5;border-radius:10px;padding:10px 12px;font-size:14px}
+.err{background:#fdecea;border-color:#f3c0b9}
+label.cb{display:flex;align-items:center;gap:6px;font-size:14px}
+@media (max-width:640px){
+  header{padding:12px}.listsel{margin-left:0}.sync{margin-left:0;width:100%}
+  main{padding:12px}nav{padding:8px 12px 0}nav button{padding:8px 10px}
+  .chartbox{height:260px}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1><span class="die"><i class="on"></i><i></i><i class="on"></i><i></i><i class="on"></i><i></i><i class="on"></i><i></i><i class="on"></i></span>Schocken</h1>
+  <div class="listsel">
+    <select id="listSelect" aria-label="Liste"></select>
+    <button class="hbtn" id="btnNewList" title="Neue Liste">+ Liste</button>
+    <button class="hbtn" id="btnEditList" title="Liste bearbeiten">✎</button>
+  </div>
+  <div class="sync"><span class="dot" id="syncDot"></span><span id="syncText">Lokal</span></div>
+</header>
+<nav id="nav">
+  <button data-view="enter" class="active">Runde eintragen</button>
+  <button data-view="stats">Auswertung</button>
+  <button data-view="charts">Grafiken</button>
+  <button data-view="rounds">Runden</button>
+  <button data-view="players">Spieler</button>
+  <button data-view="settings">Speicher</button>
+</nav>
+<main id="main"></main>
+<dialog id="dlg"><div class="dlg" id="dlgBody"></div></dialog>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ Daten ============ */
+const LS_KEY = 'schocken-state-v1', LS_CFG = 'schocken-cfg-v1';
+const COLORS = ['#1f5c45','#c8402f','#e9a23b','#3b6fb6','#8e4bb3','#2a9d8f','#d1495b','#6d597a','#7a8b2b','#b5651d','#00798c','#9c6644'];
+
+function lsGet(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+
+let S = lsGet(LS_KEY) || {players:[],lists:[],rounds:[]};
+let CFG = Object.assign({minGames:5, list:null, queue:[], pin:''}, lsGet(LS_CFG)||{});
+if(!S.lists.find(l=>l.id===CFG.list)) CFG.list = S.lists[0]?.id;
+if(!Array.isArray(CFG.queue)) CFG.queue=[];
+
+const uid = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const today = () => new Date().toISOString().slice(0,10);
+const P = id => S.players.find(p=>p.id===id);
+const minGames = () => Math.max(1, parseInt(CFG.minGames)||1);
+const curList = () => S.lists.find(l=>l.id===CFG.list);
+const listRounds = (lid=CFG.list) => S.rounds.filter(r=>r.list===lid).sort((a,b)=>a.nr-b.nr);
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = (n,d=2) => Number.isFinite(n) ? n.toLocaleString('de-DE',{minimumFractionDigits:d,maximumFractionDigits:d}) : '–';
+
+/* ============ UI-Helfer ============ */
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),2200)}
+const dlg = document.getElementById('dlg'), dlgBody = document.getElementById('dlgBody');
+function openDlg(html, onReady){dlgBody.innerHTML=html; dlg.showModal(); onReady&&onReady(dlgBody)}
+function closeDlg(){dlg.close()}
+function confirmDlg(title, text, okLabel='OK', danger=false){
+  return new Promise(res=>{
+    openDlg(`<h3>${esc(title)}</h3><p>${text}</p><div class="actions"><button class="btn sec" id="cNo">Abbrechen</button><button class="btn ${danger?'danger':''}" id="cYes">${esc(okLabel)}</button></div>`, b=>{
+      b.querySelector('#cNo').onclick=()=>{closeDlg();res(false)};
+      b.querySelector('#cYes').onclick=()=>{closeDlg();res(true)};
+    });
+    dlg.onclose=()=>res(false);
+  });
+}
+function promptDlg(title, value='', okLabel='Speichern'){
+  return new Promise(res=>{
+    openDlg(`<h3>${esc(title)}</h3><input type="text" id="pIn" style="width:100%" value="${esc(value)}"><div class="actions"><button class="btn sec" id="pNo">Abbrechen</button><button class="btn" id="pYes">${esc(okLabel)}</button></div>`, b=>{
+      const i=b.querySelector('#pIn'); i.focus(); i.select();
+      const ok=()=>{const v=i.value.trim(); closeDlg(); res(v||null)};
+      i.onkeydown=e=>{if(e.key==='Enter')ok()};
+      b.querySelector('#pNo').onclick=()=>{closeDlg();res(null)};
+      b.querySelector('#pYes').onclick=ok;
+    });
+    dlg.onclose=()=>res(null);
+  });
+}
+
+/* ============ Statistik ============ */
+function computeStats(lid, seasonFilter){
+  const list = S.lists.find(l=>l.id===lid);
+  let rounds = listRounds(lid);
+  if(seasonFilter!=='all') rounds = rounds.filter(r=>r.season===seasonFilter);
+  const ids = new Set(list.members);
+  rounds.forEach(r=>Object.keys(r.res).forEach(id=>ids.add(id)));
+  const st = [...ids].filter(P).map(id=>{
+    let games=0,lost=0,dbl=0,pts=0;
+    rounds.forEach(r=>{ if(id in r.res){games++; const v=r.res[id]; pts+=v; if(v>0)lost++; if(v===2)dbl++;} });
+    return {id,name:P(id).name,games,lost,dbl,won:games-lost,pts,avg:games&&games>=minGames()?pts/games:NaN,rate:games?lost/games*100:NaN};
+  });
+  return {rounds, st};
+}
+
+/* ============ Rendering ============ */
+let view='enter';
+const main = document.getElementById('main');
+document.getElementById('nav').onclick=e=>{const b=e.target.closest('button');if(!b)return;view=b.dataset.view;[...e.currentTarget.children].forEach(x=>x.classList.toggle('active',x===b));render()};
+
+function renderListSelect(){
+  const sel=document.getElementById('listSelect');
+  sel.innerHTML=S.lists.map(l=>`<option value="${l.id}" ${l.id===CFG.list?'selected':''}>${esc(l.name)}</option>`).join('');
+}
+document.getElementById('listSelect').onchange=e=>{CFG.list=e.target.value;persistCfg();render()};
+
+function render(){
+  renderListSelect();
+  if(!S.lists.length){main.innerHTML='<div class="card"><p class="muted">Noch keine Daten – Verbindung zur Tabelle prüfen (Tab „Speicher“).</p></div>';if(view!=='settings')return}
+  const fn={enter:renderEnter,stats:renderStats,charts:renderCharts,rounds:renderRounds,players:renderPlayers,settings:renderSettings}[view];
+  destroyCharts(); fn();
+}
+
+/* ---- Runde eintragen ---- */
+let entry = null; // {present:Set, loser, pts, date}
+function freshEntry(){
+  const rs=listRounds(); const last=rs[rs.length-1];
+  const l=curList();
+  const present = last ? Object.keys(last.res).filter(id=>l.members.includes(id)) : [...l.members];
+  return {present:new Set(present), loser:null, pts:1, date:today(), list:CFG.list};
+}
+const MIN_PLAYERS=3;
+/* Spieler-Reihenfolge: meiste Spiele in der Liste zuerst, bei Gleichstand nach Name */
+function byGames(ids, lid){
+  const n={}; S.rounds.forEach(r=>{if(r.list===lid)Object.keys(r.res).forEach(id=>n[id]=(n[id]||0)+1)});
+  return ids.slice().sort((a,b)=>(n[b]||0)-(n[a]||0)||P(a).name.localeCompare(P(b).name));
+}
+function roundForm(e, opts={}){
+  const l=S.lists.find(x=>x.id===e.list);
+  const ids=byGames([...new Set([...l.members, ...e.present])].filter(P), e.list);
+  return `
+  <div class="muted small" style="margin-bottom:6px">1. Wer war dabei? <span class="muted">(antippen zum an/abwählen)</span></div>
+  <div class="chips" data-k="present">${ids.map(id=>`<button class="chip ${e.present.has(id)?'on':''}" data-id="${id}">${esc(P(id).name)}</button>`).join('')||'<span class="muted">Noch keine Spieler in dieser Liste – unter „Spieler“ hinzufügen.</span>'}</div>
+  ${e.present.size<MIN_PLAYERS?`<div class="hint" style="margin-top:10px">Mindestens ${MIN_PLAYERS} Spieler müssen dabei sein (aktuell ${e.present.size}).</div>`:''}
+  <div class="muted small" style="margin:16px 0 6px">2. Wer hat verloren?</div>
+  <div class="chips" data-k="loser">${ids.filter(id=>e.present.has(id)).map(id=>`<button class="chip ${e.loser===id?'loser':''}" data-id="${id}">${esc(P(id).name)}</button>`).join('')||'<span class="muted">Erst Teilnehmer wählen.</span>'}</div>
+  <div class="muted small" style="margin:16px 0 6px">3. Wie verloren?</div>
+  <div class="row">
+    <div class="seg" data-k="pts"><button data-v="1" class="${e.pts===1?'on':''}">Normal · 1 Punkt</button><button data-v="2" class="${e.pts===2?'on':''}">Ohne Finale (2 Halbzeiten) · 2 Punkte</button></div>
+    <input type="date" data-k="date" value="${esc(e.date||'')}">
+  </div>`;
+}
+function bindRoundForm(root, e, rerender){
+  root.querySelector('[data-k=present]').onclick=ev=>{const b=ev.target.closest('.chip');if(!b)return;const id=b.dataset.id;e.present.has(id)?e.present.delete(id):e.present.add(id);if(!e.present.has(e.loser))e.loser=null;rerender()};
+  root.querySelector('[data-k=loser]').onclick=ev=>{const b=ev.target.closest('.chip');if(!b)return;e.loser=b.dataset.id;rerender()};
+  root.querySelector('[data-k=pts]').onclick=ev=>{const b=ev.target.closest('button');if(!b)return;e.pts=+b.dataset.v;rerender()};
+  root.querySelector('[data-k=date]').onchange=ev=>{e.date=ev.target.value};
+}
+function renderEnter(){
+  if(!entry || entry.list!==CFG.list) entry=freshEntry();
+  const rs=listRounds(), l=curList();
+  const last=rs.slice(-5).reverse();
+  main.innerHTML=`
+  <div class="card"><h2>Neue Runde · ${esc(l.name)} <span class="muted small">· Saison ${l.season} · Runde ${(rs.length?rs[rs.length-1].nr:0)+1}</span></h2>
+    <div id="rf"></div>
+    <div class="row" style="margin-top:18px;justify-content:flex-end">
+      <button class="btn sec" id="btnClr">Zurücksetzen</button>
+      <button class="btn" id="btnSave" ${entry.loser&&entry.present.size>=MIN_PLAYERS?'':'disabled'}>Runde speichern</button>
+    </div>
+  </div>
+  <div class="card"><h2>Letzte Runden</h2>${last.length?roundsTable(last,true):'<p class="muted">Noch keine Runden.</p>'}</div>`;
+  const rf=main.querySelector('#rf');
+  const rr=()=>{rf.innerHTML=roundForm(entry);bindRoundForm(rf,entry,rr);main.querySelector('#btnSave').disabled=!(entry.loser&&entry.present.size>=MIN_PLAYERS)};
+  rr();
+  main.querySelector('#btnClr').onclick=()=>{entry=freshEntry();render()};
+  main.querySelector('#btnSave').onclick=()=>{
+    const nr=(rs.length?rs[rs.length-1].nr:0)+1;
+    const res={}; entry.present.forEach(id=>res[id]= id===entry.loser?entry.pts:0);
+    const round={id:uid('R'),list:CFG.list,season:l.season,nr,date:entry.date||'',res}; S.rounds.push(round);
+    const ln=P(entry.loser).name, pts=entry.pts;
+    entry={...freshEntry()}; commit({op:'addRound',round}); toast(`Runde ${nr} gespeichert – ${ln} +${pts}`); render();
+  };
+  bindRoundActions();
+}
+
+/* ---- Runden-Tabelle ---- */
+function roundsTable(rounds, compact=false){
+  const l=curList();
+  const ids=byGames([...new Set([...l.members,...rounds.flatMap(r=>Object.keys(r.res))])].filter(P), l.id);
+  return `<div class="tablewrap"><table><thead><tr><th>Nr</th><th>Datum</th><th>Saison</th>${ids.map(id=>`<th>${esc(P(id).name)}</th>`).join('')}<th></th></tr></thead><tbody>
+  ${rounds.map(r=>`<tr><td>${r.nr}</td><td>${r.date?esc(new Date(r.date).toLocaleDateString('de-DE')):'<span class="na">–</span>'}</td><td>${r.season}</td>${ids.map(id=>`<td>${id in r.res?`<span class="cell${r.res[id]}">${r.res[id]}</span>`:'<span class="na">·</span>'}</td>`).join('')}
+  <td><button class="btn sec sm" data-edit="${r.id}">Bearbeiten</button> <button class="btn sec sm" data-del="${r.id}">✕</button></td></tr>`).join('')}
+  </tbody></table></div>`;
+}
+function bindRoundActions(){
+  main.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editRound(b.dataset.edit));
+  main.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{
+    const r=S.rounds.find(x=>x.id===b.dataset.del);
+    if(await confirmDlg('Runde löschen?',`Runde ${r.nr} wird endgültig entfernt. Die nachfolgenden Runden werden neu nummeriert.`,'Löschen',true)){
+      S.rounds=S.rounds.filter(x=>x!==r); renumber(r.list); commit({op:'deleteRound',id:r.id}); render(); toast('Runde gelöscht');
+    }
+  });
+}
+function renumber(lid){listRounds(lid).forEach((r,i)=>r.nr=i+1)}
+function editRound(id){
+  const r=S.rounds.find(x=>x.id===id);
+  const loser=Object.keys(r.res).find(k=>r.res[k]>0)||null;
+  const e={present:new Set(Object.keys(r.res)),loser,pts:loser?r.res[loser]:1,date:r.date,list:r.list};
+  openDlg(`<h3>Runde ${r.nr} bearbeiten</h3><div id="ef"></div><div class="actions"><button class="btn sec" id="eNo">Abbrechen</button><button class="btn" id="eYes">Speichern</button></div>`, b=>{
+    const ef=b.querySelector('#ef'); const rr=()=>{ef.innerHTML=roundForm(e);bindRoundForm(ef,e,rr)}; rr();
+    b.querySelector('#eNo').onclick=closeDlg;
+    b.querySelector('#eYes').onclick=()=>{
+      if(e.present.size<MIN_PLAYERS){toast(`Mindestens ${MIN_PLAYERS} Spieler auswählen`);return}
+      if(!e.loser){toast('Verlierer wählen');return}
+      const res={}; e.present.forEach(pid=>res[pid]=pid===e.loser?e.pts:0);
+      r.res=res; r.date=e.date||''; closeDlg(); commit({op:'updateRound',round:r}); render(); toast('Runde aktualisiert');
+    };
+  });
+  dlg.onclose=null;
+}
+function renderRounds(){
+  const rs=listRounds().slice().reverse();
+  main.innerHTML=`<div class="card"><h2>Alle Runden · ${esc(curList().name)} <span class="muted small">(${rs.length})</span></h2>
+  <p class="muted small" style="margin-top:-6px">1 = normal verloren · 2 = ohne Finale (2 Halbzeiten) · 0 = dabei, nicht verloren · „·“ = nicht dabei</p>
+  ${rs.length?roundsTable(rs):'<p class="muted">Noch keine Runden.</p>'}</div>`;
+  bindRoundActions();
+}
+
+/* ---- Auswertung ---- */
+let seasonSel='cur', sortKey='pts', sortDir=-1;
+function seasonValue(){const l=curList();return seasonSel==='cur'?l.season:seasonSel==='all'?'all':+seasonSel}
+function seasonPicker(){
+  const l=curList(); let opts=`<option value="cur" ${seasonSel==='cur'?'selected':''}>Aktuelle Saison (${l.season})</option><option value="all" ${seasonSel==='all'?'selected':''}>Alle Saisons</option>`;
+  for(let s=l.season-1;s>=1;s--) opts+=`<option value="${s}" ${seasonSel==String(s)?'selected':''}>Saison ${s}</option>`;
+  return `<select class="inp" id="seasonSel">${opts}</select>`;
+}
+function bindSeason(){main.querySelector('#seasonSel').onchange=e=>{seasonSel=e.target.value;render()}}
+const SOLL_OPTS=[['pts','Meiste Punkte'],['avg','Höchster Ø Punkte/Spiel'],['lost','Meiste Niederlagen'],['rate','Höchste Verlustquote'],['dbl','Meiste Ohne-Finale-Niederlagen']];
+const sollKey=()=>SOLL_OPTS.some(o=>o[0]===CFG.sollKey)?CFG.sollKey:'pts';
+const fmtCrit=(k,v)=>k==='avg'?fmt(v)+' Ø':k==='rate'?fmt(v,1)+' %':k==='pts'?v+' Punkte':k==='lost'?v+' Niederlagen':v+'× ohne Finale';
+function sollLeaders(st){
+  const k=sollKey(); const pool=st.filter(s=>s.games>0&&Number.isFinite(s[k])&&(k!=='rate'||s.games>=minGames()));
+  const max=Math.max(...pool.map(s=>s[k]));
+  if(!pool.length||!(max>0))return {k,ids:[],names:[],value:null};
+  const lead=pool.filter(s=>s[k]===max);
+  return {k,ids:lead.map(s=>s.id),names:lead.map(s=>s.name),value:max};
+}
+function renderStats(){
+  const l=curList(); const {rounds,st}=computeStats(l.id,seasonValue());
+  const active=st.filter(s=>s.games>0);
+  const lead=sollLeaders(st);
+  const cols=[['name','Spieler'],['games','Spiele'],['lost','Verloren'],['dbl','davon 2er'],['won','Nicht verl.'],['rate','Verlust­quote'],['pts','Punkte'],['avg','Ø Pkt/Spiel']];
+  const sorted=st.slice().sort((a,b)=>{const x=a[sortKey],y=b[sortKey];if(typeof x==='string')return sortDir*x.localeCompare(y);const nx=Number.isFinite(x)?x:-1e9,ny=Number.isFinite(y)?y:-1e9;return sortDir*(nx-ny)||a.name.localeCompare(b.name)});
+  main.innerHTML=`
+  <div class="row" style="margin-bottom:14px">${seasonPicker()}<label class="small muted row" style="gap:6px">Ø Punkte/Spiel ab <input type="number" id="minG" min="1" max="999" value="${minGames()}" style="width:64px;font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px"> Spielen</label><label class="small muted row" style="gap:6px">Kasten Bier für <select class="inp" id="sollSel">${SOLL_OPTS.map(([k,t])=>`<option value="${k}" ${sollKey()===k?'selected':''}>${t}</option>`).join('')}</select></label><span style="flex:1"></span><button class="btn danger" id="btnReset">Soll erfüllt – Reset</button></div>
+  <div class="kpis">
+    <div class="kpi"><div class="l">Runden</div><div class="v">${rounds.length}</div></div>
+    <div class="kpi"><div class="l">Punkte gesamt</div><div class="v">${st.reduce((a,s)=>a+s.pts,0)}</div></div>
+    <div class="kpi"><div class="l">🍺 Kasten Bier</div><div class="v">${lead.ids.length?esc(lead.names.join(' & ')):'–'}</div><div class="small muted">${lead.ids.length?fmtCrit(lead.k,lead.value):''}</div></div>
+    <div class="kpi"><div class="l">Ohne-Finale-Niederlagen</div><div class="v">${st.reduce((a,s)=>a+s.dbl,0)}</div></div>
+  </div>
+  <div class="card"><h2>Tabelle · ${esc(l.name)}</h2><div class="tablewrap"><table><thead><tr>
+  ${cols.map(([k,t])=>`<th data-k="${k}" class="${sortKey===k?'sorted':''}">${t}${sortKey===k?(sortDir<0?' ↓':' ↑'):''}</th>`).join('')}
+  </tr></thead><tbody>
+  ${sorted.map(s=>`<tr><td><b>${esc(s.name)}</b>${lead.ids.includes(s.id)?'<span class="badge">🍺 Kasten Bier</span>':''}</td><td>${s.games}</td><td>${s.lost}</td><td>${s.dbl}</td><td>${s.won}</td><td>${Number.isFinite(s.rate)?fmt(s.rate,1)+' %':'–'}</td><td><b>${s.pts}</b></td><td>${s.games&&s.games<minGames()?`<span class="na" title="Erst ab ${minGames()} Spielen">– (${s.games}/${minGames()})</span>`:fmt(s.avg)}</td></tr>`).join('')}
+  </tbody></table></div><p class="muted small">Spaltenkopf anklicken zum Sortieren. Ø Punkte/Spiel wird erst ab ${minGames()} Spielen berechnet; Spieler darunter stehen beim Sortieren nach Ø unten und zählen beim Kasten-Bier-Kriterium Ø bzw. Verlustquote nicht mit.</p></div>`;
+  bindSeason();
+  main.querySelector('#sollSel').onchange=e=>{CFG.sollKey=e.target.value;persistCfg();render()};
+  main.querySelector('#minG').onchange=e=>{CFG.minGames=Math.max(1,parseInt(e.target.value)||1);persistCfg();render()};
+  main.querySelectorAll('th[data-k]').forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=k==='name'?1:-1}render()});
+  main.querySelector('#btnReset').onclick=doReset;
+}
+async function doReset(){
+  const l=curList(); const {st}=computeStats(l.id,l.season);
+  const lead=sollLeaders(st);
+  const ok=await confirmDlg('Soll erfüllt – neue Saison starten?',
+    `${lead.ids.length?`🍺 Kasten Bier: <b>${esc(lead.names.join(' & '))}</b> (${esc(SOLL_OPTS.find(o=>o[0]===lead.k)[1])}: ${fmtCrit(lead.k,lead.value)}). `:''}Alle Punktestände in „${esc(l.name)}“ starten wieder bei 0 (Saison ${l.season+1}). Die bisherigen Runden bleiben als Saison ${l.season} im Verlauf erhalten.`,'Reset',true);
+  if(!ok)return; l.season++; seasonSel='cur'; commit({op:'upsertList',list:l}); render(); toast(`Saison ${l.season} gestartet`);
+}
+
+/* ---- Grafiken ---- */
+let charts=[];
+function destroyCharts(){charts.forEach(c=>c.destroy());charts=[]}
+function renderCharts(){
+  const l=curList(); const {rounds,st}=computeStats(l.id,seasonValue());
+  const act=st.filter(s=>s.games>0).sort((a,b)=>b.pts-a.pts);
+  main.innerHTML=`<div class="row" style="margin-bottom:14px">${seasonPicker()}</div>
+  ${typeof Chart==='undefined'?'<div class="hint err">Diagramm-Bibliothek konnte nicht geladen werden.</div>':''}
+  <div class="card"><h2>Punkteverlauf</h2><div class="chartbox" style="height:340px"><canvas id="c1"></canvas></div></div>
+  <div class="charts">
+    <div class="card"><h2>Punkte & Niederlagen</h2><div class="chartbox"><canvas id="c2"></canvas></div></div>
+    <div class="card"><h2>Ø Punkte pro Spiel <span class="muted small">(ab ${minGames()} Spielen)</span></h2><div class="chartbox"><canvas id="c3"></canvas></div></div>
+    <div class="card"><h2>Teilnahmen: verloren vs. nicht verloren</h2><div class="chartbox"><canvas id="c4"></canvas></div></div>
+  </div>`;
+  bindSeason();
+  if(typeof Chart==='undefined'||!act.length)return;
+  Chart.defaults.font.family='Inter,system-ui,sans-serif'; Chart.defaults.color='#6b726d';
+  const color=i=>COLORS[i%COLORS.length];
+  // Verlauf
+  const ds=act.map((s,i)=>{let c=0;return{label:s.name,data:rounds.map(r=>{if(s.id in r.res)c+=r.res[s.id];return c}),borderColor:color(i),backgroundColor:color(i),tension:.25,pointRadius:0,borderWidth:2.2}});
+  charts.push(new Chart(document.getElementById('c1'),{type:'line',data:{labels:rounds.map(r=>r.nr),datasets:ds},options:{animation:false,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom'}},scales:{x:{title:{display:true,text:'Runde'},grid:{display:false}},y:{beginAtZero:true,title:{display:true,text:'Punkte (kumuliert)'}}}}}));
+  const names=act.map(s=>s.name);
+  charts.push(new Chart(document.getElementById('c2'),{type:'bar',data:{labels:names,datasets:[{label:'Punkte',data:act.map(s=>s.pts),backgroundColor:'#1f5c45',borderRadius:4},{label:'Niederlagen',data:act.map(s=>s.lost),backgroundColor:'#e9a23b',borderRadius:4}]},options:{maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{x:{grid:{display:false}},y:{beginAtZero:true}}}}));
+  const byAvg=act.filter(s=>Number.isFinite(s.avg)).sort((a,b)=>b.avg-a.avg);
+  charts.push(new Chart(document.getElementById('c3'),{type:'bar',data:{labels:byAvg.map(s=>s.name),datasets:[{label:'Ø Punkte/Spiel',data:byAvg.map(s=>+s.avg.toFixed(3)),backgroundColor:'#c8402f',borderRadius:4}]},options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{display:false}},x:{beginAtZero:true}}}}));
+  const byG=act.slice().sort((a,b)=>b.games-a.games);
+  charts.push(new Chart(document.getElementById('c4'),{type:'bar',data:{labels:byG.map(s=>s.name),datasets:[{label:'Verloren',data:byG.map(s=>s.lost),backgroundColor:'#c8402f',borderRadius:4},{label:'Nicht verloren',data:byG.map(s=>s.won),backgroundColor:'#9cc5b0',borderRadius:4}]},options:{maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true}}}}));
+}
+
+/* ---- Spieler ---- */
+function renderPlayers(){
+  const l=curList();
+  const cnt=id=>S.rounds.filter(r=>id in r.res).length;
+  main.innerHTML=`<div class="card"><h2>Spieler</h2>
+  <div class="row" style="margin-bottom:12px"><input type="text" id="newP" placeholder="Name des neuen Spielers"><button class="btn" id="addP">Hinzufügen</button></div>
+  <p class="muted small">Häkchen = spielt in der Liste „${esc(l.name)}“ mit.</p>
+  <div class="plist">${S.players.map(p=>`<div class="pitem"><label class="cb"><input type="checkbox" data-mem="${p.id}" ${l.members.includes(p.id)?'checked':''}></label><span class="name">${esc(p.name)}</span><span class="muted small">${cnt(p.id)} Runden</span><button class="btn sec sm" data-ren="${p.id}">Umbenennen</button><button class="btn sec sm" data-rm="${p.id}">Entfernen</button></div>`).join('')}</div></div>`;
+  const add=async()=>{const i=main.querySelector('#newP');const n=i.value.trim();if(!n)return;if(S.players.some(p=>p.name.toLowerCase()===n.toLowerCase())){toast('Name existiert schon');return}
+    const id=uid('P');S.players.push({id,name:n});l.members.push(id);entry=null;commit({op:'upsertPlayer',player:{id,name:n}},{op:'upsertList',list:l});render();toast(n+' hinzugefügt')};
+  main.querySelector('#addP').onclick=add; main.querySelector('#newP').onkeydown=e=>{if(e.key==='Enter')add()};
+  main.querySelectorAll('[data-mem]').forEach(c=>c.onchange=()=>{const id=c.dataset.mem;if(c.checked)l.members.push(id);else l.members=l.members.filter(x=>x!==id);entry=null;commit({op:'upsertList',list:l})});
+  main.querySelectorAll('[data-ren]').forEach(b=>b.onclick=async()=>{const p=P(b.dataset.ren);const n=await promptDlg('Spieler umbenennen',p.name);if(n){p.name=n;commit({op:'upsertPlayer',player:p});render()}});
+  main.querySelectorAll('[data-rm]').forEach(b=>b.onclick=async()=>{const p=P(b.dataset.rm);const c=cnt(p.id);
+    const ok=await confirmDlg(`${p.name} entfernen?`, c?`${esc(p.name)} ist in ${c} Runden eingetragen. Diese Einträge werden ebenfalls gelöscht – Runden, in denen ${esc(p.name)} verloren hat, verschwinden damit komplett.<br><br>Tipp: Wenn ${esc(p.name)} nur nicht mehr mitspielt, reicht es, das Häkchen bei der Liste zu entfernen.`:'Der Spieler hat noch keine Runden.','Entfernen',true);
+    if(!ok)return;
+    S.rounds.forEach(r=>{delete r.res[p.id]});
+    const affected=new Set(S.rounds.filter(r=>!Object.values(r.res).some(v=>v>0)).map(r=>r.list));
+    S.rounds=S.rounds.filter(r=>Object.values(r.res).some(v=>v>0));
+    affected.forEach(renumber); S.lists.forEach(x=>x.members=x.members.filter(i=>i!==p.id));
+    S.players=S.players.filter(x=>x!==p); entry=null; commit({op:'deletePlayer',id:p.id}); render(); toast(p.name+' entfernt')});
+}
+
+/* ---- Listen ---- */
+document.getElementById('btnNewList').onclick=async()=>{
+  const n=await promptDlg('Neue Liste (z. B. Sonderereignis)','', 'Anlegen'); if(!n)return;
+  const base=curList();
+  const l={id:uid('L'),name:n,members:[...(base?base.members:[])],season:1,created:today()};
+  S.lists.push(l); CFG.list=l.id; entry=null; persistCfg(); commit({op:'upsertList',list:l}); render(); toast('Liste „'+n+'“ angelegt');
+};
+document.getElementById('btnEditList').onclick=()=>{
+  const l=curList();
+  openDlg(`<h3>Liste bearbeiten</h3><input type="text" id="lName" style="width:100%" value="${esc(l.name)}">
+  <p class="muted small">${listRounds().length} Runden · Saison ${l.season} · angelegt ${esc(l.created||'–')}</p>
+  <div class="actions" style="justify-content:space-between"><button class="btn danger" id="lDel" ${S.lists.length<2?'disabled title="Die letzte Liste kann nicht gelöscht werden"':''}>Liste löschen</button><span><button class="btn sec" id="lNo">Abbrechen</button> <button class="btn" id="lYes">Speichern</button></span></div>`, b=>{
+    b.querySelector('#lNo').onclick=closeDlg;
+    b.querySelector('#lYes').onclick=()=>{const n=b.querySelector('#lName').value.trim();if(n){l.name=n;commit({op:'upsertList',list:l});render()}closeDlg()};
+    b.querySelector('#lDel').onclick=async()=>{closeDlg();
+      if(await confirmDlg(`„${l.name}“ löschen?`,`Die Liste und alle ${listRounds().length} Runden darin werden gelöscht. Spieler bleiben erhalten.`,'Löschen',true)){
+        S.rounds=S.rounds.filter(r=>r.list!==l.id); S.lists=S.lists.filter(x=>x!==l); CFG.list=S.lists[0].id; entry=null; persistCfg(); commit({op:'deleteList',id:l.id}); render(); toast('Liste gelöscht')}};
+  });
+  dlg.onclose=null;
+};
+
+/* ---- Speicher / Einstellungen ---- */
+function renderSettings(){
+  const C=window.SCHOCKEN_CONFIG||{};
+  main.innerHTML=`<div class="card"><h2>Speicher: Google-Tabelle</h2>
+  <p>Alle Mitspieler mit dieser App schreiben in dieselbe Google-Tabelle. Die App hält zusätzlich eine lokale Kopie; Einträge ohne Netz werden gesammelt und nachgeschickt.</p>
+  <div id="connInfo" class="hint ${syncState.st==='err'?'err':''}" style="margin:12px 0">${esc(syncState.msg)}</div>
+  ${CFG.queue.length?`<p class="small"><b>${CFG.queue.length}</b> Änderung(en) warten auf Übertragung.</p>`:''}
+  <div class="row"><button class="btn" id="pull">Jetzt aktualisieren</button>${C.SHEET_URL?`<a class="btn sec" href="${esc(C.SHEET_URL)}" target="_blank" rel="noopener" style="text-decoration:none">Tabelle öffnen ↗</a>`:''}</div>
+  <div class="row" style="margin-top:14px"><label class="small muted">PIN (falls eingerichtet)</label><input type="password" id="pin" value="${esc(CFG.pin)}" style="width:140px;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px"><button class="btn sec" id="pinSave">Übernehmen</button></div>
+  </div>
+  <div class="card"><h2>Export</h2><p class="muted small">Kopiert die aktuelle Liste als CSV (Format wie eure alte Tabelle) in die Zwischenablage.</p><button class="btn sec" id="csv">CSV kopieren</button></div>
+  <p class="muted small">App-Version ${APP_VERSION}</p>`;
+  main.querySelector('#pull').onclick=()=>sync(true);
+  main.querySelector('#pinSave').onclick=()=>{CFG.pin=main.querySelector('#pin').value.trim();persistCfg();sync(true)};
+  main.querySelector('#csv').onclick=async()=>{
+    const l=curList(),rs=listRounds(),ids=byGames([...new Set([...l.members,...rs.flatMap(r=>Object.keys(r.res))])].filter(P),l.id);
+    const {st}=computeStats(l.id,'all');const tot=id=>st.find(s=>s.id===id)?.pts??0;
+    const lines=[['Name',...ids.map(id=>P(id).name)],['Gesamt',...ids.map(tot)],...rs.map((r,i)=>[i?'':'Runden',...ids.map(id=>id in r.res?r.res[id]:'')])];
+    try{await navigator.clipboard.writeText(lines.map(x=>x.join(',')).join('\n'));toast('CSV kopiert')}catch(e){toast('Kopieren nicht möglich')}
+  };
+}
+
+/* ============ Persistenz (Google Apps Script) ============ */
+const APP_VERSION='1.0.0';
+function persistCfg(){lsSet(LS_CFG,CFG)}
+function commit(...ops){lsSet(LS_KEY,S);CFG.queue.push(...ops);persistCfg();setSync('busy','Speichere …');sync(false)}
+
+let syncState={st:'busy',msg:'Verbinde mit der Google-Tabelle …'};
+function setSync(st,msg){syncState={st,msg};const d=document.getElementById('syncDot');d.className='dot '+({ok:'ok',busy:'busy',err:'err'}[st]||'');
+  document.getElementById('syncText').textContent={ok:'Synchron',busy:'Synchronisiere …',err:'Nicht synchron'}[st]||st;
+  const ci=document.getElementById('connInfo');if(ci){ci.textContent=msg;ci.classList.toggle('err',st==='err')}}
+
+async function api(ops){
+  const url=(window.SCHOCKEN_CONFIG||{}).API_URL;
+  if(!url||url.includes('HIER'))throw Object.assign(new Error('API-Adresse fehlt in config.js'),{code:'config'});
+  const res=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({ops,pin:CFG.pin||''}),redirect:'follow'});
+  if(!res.ok)throw Object.assign(new Error('HTTP '+res.status),{code:'http'});
+  const j=await res.json();
+  if(!j.ok)throw Object.assign(new Error(j.error||'Fehler'),{code:j.error==='pin'?'pin':'server'});
+  return j.state;
+}
+const SYNC_ERR={config:'Die App ist noch nicht mit der Tabelle verbunden (config.js).',pin:'Falsche oder fehlende PIN – unter „Speicher“ eintragen.',http:'Die Tabelle ist gerade nicht erreichbar.',server:'Die Tabelle hat einen Fehler gemeldet'};
+let syncing=false, again=false;
+async function sync(manual){
+  if(syncing){again=true;return} syncing=true;
+  try{
+    do{
+      again=false;
+      const ops=CFG.queue.slice();
+      const state=await api(ops);
+      CFG.queue.splice(0,ops.length); persistCfg();
+      if(!CFG.queue.length){
+        S=state; lsSet(LS_KEY,S);
+        if(!S.lists.find(l=>l.id===CFG.list)){CFG.list=S.lists[0]?.id;entry=null;persistCfg()}
+        if(!dlg.open) render();
+      }
+    }while(again||CFG.queue.length);
+    setSync('ok','Mit der Google-Tabelle synchron ('+new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})+').');
+    if(manual)toast('Aktualisiert');
+  }catch(e){
+    const off=!navigator.onLine||e instanceof TypeError;
+    setSync('err',off?'Keine Verbindung – Änderungen werden gespeichert und später übertragen.':(SYNC_ERR[e.code]||'Fehler')+(e.code==='server'?': '+e.message:''));
+    if(manual)toast('Aktualisieren fehlgeschlagen');
+    if(e.code==='pin') askPin();
+  }finally{syncing=false}
+}
+let pinAsked=false;
+function askPin(){
+  if(pinAsked||dlg.open)return; pinAsked=true;
+  openDlg(`<h3>PIN eingeben</h3><p class="muted small">${CFG.pin?'Die gespeicherte PIN stimmt nicht.':'Diese Strichliste ist mit einer PIN geschützt. Frag in der Runde nach.'} Die PIN wird auf diesem Gerät gespeichert.</p>
+    <input type="password" inputmode="numeric" id="pinIn" style="width:100%;font:inherit;padding:10px;border:1px solid var(--line);border-radius:8px" autocomplete="off">
+    <div class="actions"><button class="btn sec" id="pinNo">Später</button><button class="btn" id="pinOk">Weiter</button></div>`, bd=>{
+    const i=bd.querySelector('#pinIn'); i.focus();
+    const ok=()=>{CFG.pin=i.value.trim();persistCfg();closeDlg();pinAsked=false;sync(true)};
+    i.onkeydown=e=>{if(e.key==='Enter')ok()};
+    bd.querySelector('#pinOk').onclick=ok;
+    bd.querySelector('#pinNo').onclick=closeDlg;
+  });
+  dlg.onclose=null;
+}
+
+/* ============ Start ============ */
+if(!S.lists.length){main.innerHTML='<div class="card"><p class="muted">Lade Daten aus der Google-Tabelle …</p></div>'}else render();
+sync(false);
+setInterval(()=>{if(!document.hidden)sync(false)},30000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync(false)});
+window.addEventListener('online',()=>sync(false));
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
